@@ -1,0 +1,213 @@
+#include <iostream>
+#include <iomanip>
+using namespace std;
+#define MAX_DOCTORS 20
+#define MAX_PATIENTS 20
+#define MAX_APPOINTMENTS 50
+class Person {
+protected:
+    string name;
+    int age;
+    string gender;
+public:
+    Person(string n = "", int a = 0, string g = "") {
+        name = n;
+        age = a;
+        gender = g;
+    }
+    virtual void displayInfo() = 0; 
+    string getName() {
+        return name;
+    }
+};
+
+class Doctor : public Person {
+    string specialization;
+    double fee;
+public:
+    Doctor(string n = "", int a = 0, string g = "", string s = "", double f = 0.0)
+        : Person(n, a, g) {
+        specialization = s;
+        fee = f;
+    }
+
+    void displayInfo() {
+        cout << "Dr. " << name << " (" << specialization << "), Fee: ₹" << fee << endl;
+    }
+
+    double getFee() {
+        return fee;
+    }
+};
+
+//  PATIENT BASE CLASS 
+class Patient : public Person {
+protected:
+    string disease;
+
+public:
+    Patient(string n = "", int a = 0, string g = "", string d = "")
+        : Person(n, a, g) {
+        disease = d;
+    }
+
+    virtual double calculateBill() = 0; 
+};
+
+class Outpatient : public Patient {
+public:
+    Outpatient(string n = "", int a = 0, string g = "", string d = "")
+        : Patient(n, a, g, d) {}
+
+    void displayInfo() {
+        cout << "Outpatient: " << name << ", Disease: " << disease << endl;
+    }
+
+    double calculateBill() {
+        return 500.0; 
+    }
+};
+
+class Inpatient : public Patient {
+    int days;
+    double chargePerDay;
+
+public:
+    Inpatient(string n = "", int a = 0, string g = "", string d = "", int dy = 0, double charge = 0.0)
+        : Patient(n, a, g, d) {
+        days = dy;
+        chargePerDay = charge;
+    }
+
+    void displayInfo() {
+        cout << "Inpatient: " << name << ", Disease: " << disease
+             << ", Days Admitted: " << days << endl;
+    }
+
+    double calculateBill() {
+        return (days * chargePerDay) + 1000; 
+    }
+};
+
+class Appointment {
+    string doctorName;
+    string patientName;
+    string date;
+    double bill;
+
+public:
+    Appointment(string d = "", string p = "", string dt = "", double b = 0.0) {
+        doctorName = d;
+        patientName = p;
+        date = dt;
+        bill = b;
+    }
+
+    void display() {
+        cout << left << setw(15) << doctorName
+             << setw(15) << patientName
+             << setw(12) << date
+             << "Bill: ₹" << bill << endl;
+    }
+};
+
+class Hospital {
+    Doctor doctors[MAX_DOCTORS];
+    Patient* patients[MAX_PATIENTS];
+    Appointment appointments[MAX_APPOINTMENTS];
+    int doctorCount;
+    int patientCount;
+    int appointmentCount;
+
+public:
+    Hospital() {
+        doctorCount = 0;
+        patientCount = 0;
+        appointmentCount = 0;
+    }
+
+    void addDoctor(string n, int a, string g, string s, double f) {
+        if (doctorCount < MAX_DOCTORS) {
+            doctors[doctorCount++] = Doctor(n, a, g, s, f);
+        } else {
+            cout << "Doctor list full!" << endl;
+        }
+    }
+
+    void addPatient(Patient* p) {
+        if (patientCount < MAX_PATIENTS) {
+            patients[patientCount++] = p;
+        } else {
+            cout << "Patient list full!" << endl;
+        }
+    }
+
+    void showDoctors() {
+        cout << "\nList of Doctors:\n";
+        for (int i = 0; i < doctorCount; i++) {
+            cout << i + 1 << ". ";
+            doctors[i].displayInfo();
+        }
+    }
+
+    void showPatients() {
+        cout << "\nList of Patients:\n";
+        for (int i = 0; i < patientCount; i++) {
+            patients[i]->displayInfo();
+        }
+    }
+
+    void bookAppointment(int docIndex, Patient* p, string date) {
+        if (docIndex < 0 || docIndex >= doctorCount) {
+            cout << "Invalid doctor number!" << endl;
+            return;
+        }
+
+        double totalBill = doctors[docIndex].getFee() + p->calculateBill();
+
+        if (appointmentCount < MAX_APPOINTMENTS) {
+            appointments[appointmentCount++] = Appointment(doctors[docIndex].getName(), p->getName(), date, totalBill);
+            cout << "Appointment booked successfully!\n";
+        } else {
+            cout << "Appointment list full!" << endl;
+        }
+    }
+
+    void showAppointments() {
+        if (appointmentCount == 0) {
+            cout << "\nNo appointments found.\n";
+            return;
+        }
+
+        cout << "\n===== Appointment Details =====\n";
+        cout << left << setw(15) << "Doctor"
+             << setw(15) << "Patient"
+             << setw(12) << "Date" << "Bill\n";
+        for (int i = 0; i < appointmentCount; i++) {
+            appointments[i].display();
+        }
+    }
+};
+
+int main() {
+    Hospital h;
+    cout << "===== HOSPITAL MANAGEMENT SYSTEM =====\n";
+
+    h.addDoctor("Ridhi", 20, "Female", "Cardiologist", 700);
+    h.addDoctor("Abhay", 38, "Male", "Neurologist", 800);
+    h.addDoctor("Harshita", 35, "Female", "Pediatrician", 600);
+    Patient* p1 = new Outpatient("Ashish", 28, "Female", "Fever");
+    Patient* p2 = new Inpatient("Aashna", 50, "Female", "Heart Surgery", 5, 2000);
+    h.addPatient(p1);
+    h.addPatient(p2);
+    h.showDoctors();
+    h.showPatients();
+
+    h.bookAppointment(0, p1, "18-Oct-2025");
+    h.bookAppointment(1, p2, "19-Oct-2025");
+
+    h.showAppointments();
+    delete p1;
+    delete p2;
+    return 0;
+}
